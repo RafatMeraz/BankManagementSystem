@@ -3,20 +3,41 @@ package loginsignup;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Signup extends JFrame {
 
     private Container container;
     private JPanel logoPanel, textPanel;
     private JLabel imageLogo, comName, signUpLabel;
-    private JTextField accTV, dobTF, contactTF, emailTF;
+    private JTextField nameTF, dobTF, contactTF, emailTF;
     private JPasswordField passwordField;
     private JButton loginButton;
     private JRadioButton maleButton, femaleButton;
     private ButtonGroup genderButtonGroup;
 
+
+    //database Connection
+    Connection connect = SqliteConnection.dbConnector();
+    Statement statement;
+
+    //Queries for database
+
+
+    {
+        try {
+            statement = connect.createStatement();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     Signup(){
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -66,30 +87,31 @@ public class Signup extends JFrame {
         imageLogo.setSize(new Dimension(50, 50));
         textPanel.add(imageLogo);
 
-        comName = new JLabel("Welcome to ZAD,");
-        comName.setFont(new Font("monospace", NORMAL, 20));
-        comName.setForeground(Color.BLACK);
+
+        comName = new JLabel("New user name");
+        comName.setFont(new Font("monospace", Font.BOLD, 12));
+        comName.setForeground(Color.GRAY);
         comName.setBounds(50, 55, 200, 40);
         textPanel.add(comName);
 
-        comName = new JLabel("Sign up to enjoy the Banking!");
-        comName.setFont(new Font("monospace", NORMAL, 12));
-        comName.setForeground(Color.gray);
-        comName.setBounds(50, 80, 200, 40);
-        textPanel.add(comName);
+        nameTF = new JTextField();
+        Border textFieldBorder = BorderFactory.createLineBorder(Color.decode("#304FFE"), 2);
+        nameTF.setBorder(textFieldBorder);
+        nameTF.setFont(new Font("monospace", NORMAL, 13));
+        nameTF.setBounds(50, 95, 200, 30);
+        textPanel.add(nameTF);
 
-        comName = new JLabel("New user name");
+        comName = new JLabel("Date of Birth");
         comName.setFont(new Font("monospace", Font.BOLD, 12));
         comName.setForeground(Color.GRAY);
         comName.setBounds(50, 120, 200, 40);
         textPanel.add(comName);
 
-        accTV = new JTextField();
-        Border textFieldBorder = BorderFactory.createLineBorder(Color.decode("#304FFE"), 2);
-        accTV.setBorder(textFieldBorder);
-        accTV.setFont(new Font("monospace", NORMAL, 13));
-        accTV.setBounds(50, 150, 200, 30);
-        textPanel.add(accTV);
+        dobTF = new JTextField();
+        dobTF.setBorder(textFieldBorder);
+        dobTF.setFont(new Font("monospace", NORMAL, 13));
+        dobTF.setBounds(50, 150, 200, 30);
+        textPanel.add(dobTF);
 
         comName = new JLabel("New Password");
         comName.setFont(new Font("monospace", Font.BOLD, 12));
@@ -152,6 +174,26 @@ public class Signup extends JFrame {
         loginButton.setForeground(Color.WHITE);
         loginButton.setFont(new Font("roboto", Font.BOLD, 15 ));
         loginButton.setBounds(50, 400, 200, 35);
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String dob = dobTF.getText();
+                String name = nameTF.getText();
+                String email = emailTF.getText();
+                int contact = Integer.parseInt(contactTF.getText());
+                String gender = (femaleButton.isSelected()) ? femaleButton.getText(): maleButton.getText();
+                String pass = passwordField.getText();
+
+                try {
+                    statement.executeUpdate("INSERT INTO bank (name, email, contact, gender, password, dob) VALUES ('"+name+"','"+email+"',"+contact+",'"+gender+"','"+pass+"','"+dob+"')");
+                    JOptionPane.showMessageDialog(null, "Account has been created! Please Login!");
+                    dispose();
+                    new Login().setVisible(true);
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
         textPanel.add(loginButton);
 
         comName = new JLabel("Already member?");

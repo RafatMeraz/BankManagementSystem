@@ -3,10 +3,29 @@ package loginsignup;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Login extends JFrame {
+
+    //database Connection
+    Connection connect = SqliteConnection.dbConnector();
+    Statement statement;
+
+    //Queries for database
+    {
+        try {
+            statement = connect.createStatement();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     private Container container;
     private JPanel logoPanel, textPanel;
@@ -107,6 +126,34 @@ public class Login extends JFrame {
         loginButton.setFont(new Font("roboto", Font.BOLD, 15 ));
         loginButton.setBounds(50, 350, 200, 40);
         textPanel.add(loginButton);
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("clicked");
+                int userID = Integer.parseInt(accTV.getText().trim());
+                String userPass = passwordField.getText();
+                try {
+                    ResultSet resultSet = statement.executeQuery("SELECT * FROM bank WHERE acc_number="+userID+" AND password='"+userPass+"';");
+                    while (resultSet.next()){
+                        User user ;
+                        int accountNumber = resultSet.getInt("acc_number");
+                        int contact = resultSet.getInt(5);
+                        int balance = resultSet.getInt(6);
+                        String name = resultSet.getString(2);
+                        String dob = resultSet.getString(3);
+                        String email = resultSet.getString(4);
+                        String pass = resultSet.getString(7);
+                        dispose();
+                        new UserDashboard(new User(accountNumber, name, pass, dob, balance, contact, email)).setVisible(true);
+                    }
+                } catch (SQLException e1) {
+                    passwordField.setText("");
+                    e1.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "UserName/Password Incorrect\nPlease Try Again");
+                }
+
+            }
+        });
 
         comName = new JLabel("New User?");
         comName.setFont(new Font("monospace", Font.BOLD, 12));
