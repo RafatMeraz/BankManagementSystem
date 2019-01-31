@@ -170,6 +170,11 @@ public class Login extends JFrame {
             public void mouseClicked(MouseEvent e){
                 Signup s = new Signup();
                 s.setVisible(true);
+                try {
+                    connect.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
                 dispose();
             }
         });

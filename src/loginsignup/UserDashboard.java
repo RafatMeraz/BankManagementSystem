@@ -185,72 +185,6 @@ public class UserDashboard extends JFrame implements ActionListener {
         withdrawPanel.add(cashWithButton);
 
         //Transfer your Balance Panel
-        transferPanel = new JPanel();
-        transferPanel.setLayout(null);
-        transferPanel.setBounds(0,0, 380, 500);
-
-        comLabel = new JLabel();
-        comLabel.setIcon(new ImageIcon(getClass().getResource("idea_gey.png")));
-        comLabel.setBounds(50, 10, 200, 200);
-        comLabel.setSize(new Dimension(100, 100));
-        transferPanel.add(comLabel);
-
-        comLabel = new JLabel("Transfer your money");
-        comLabel.setFont(new Font("monospace", NORMAL, 15));
-        comLabel.setForeground(Color.BLACK);
-        comLabel.setBounds(50, 100, 200, 40);
-        transferPanel.add(comLabel);
-
-        comLabel = new JLabel("ACCOUNT NO. :");
-        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
-        comLabel.setForeground(Color.GRAY);
-        comLabel.setBounds(50, 130, 250, 40);
-        transferPanel.add(comLabel);
-
-        bankAcountNumberTF = new JTextField();
-        bankAcountNumberTF.setBorder(textFieldBorder);
-        bankAcountNumberTF.setFont(new Font("monospace", NORMAL, 13));
-        bankAcountNumberTF.setBounds(50, 160, 250, 30);
-        transferPanel.add(bankAcountNumberTF);
-
-        comLabel = new JLabel("AMOUNT OF BALANCE :");
-        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
-        comLabel.setForeground(Color.GRAY);
-        comLabel.setBounds(50, 190, 250, 40);
-        transferPanel.add(comLabel);
-
-        transferAmountOfMoneyTF = new JTextField();
-        transferAmountOfMoneyTF.setBorder(textFieldBorder);
-        transferAmountOfMoneyTF.setFont(new Font("monospace", NORMAL, 13));
-        transferAmountOfMoneyTF.setBounds(50, 220, 250, 30);
-        transferPanel.add(transferAmountOfMoneyTF);
-
-        comLabel = new JLabel("PASSWORD :");
-        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
-        comLabel.setForeground(Color.GRAY);
-        comLabel.setBounds(50, 250, 250, 40);
-        transferPanel.add(comLabel);
-
-        transferPassField = new JPasswordField();
-        transferPassField.setBorder(textFieldBorder);
-        transferPassField.setFont(new Font("monospace", NORMAL, 13));
-        transferPassField.setBounds(50, 280, 250, 30);
-        transferPanel.add(transferPassField);
-
-        transferResetButton = new JButton("RESET");
-        transferResetButton.setForeground(Color.white);
-        transferResetButton.setBackground(Color.GRAY);
-        transferResetButton.setBounds(50, 320, 100, 30);
-        transferResetButton.addActionListener(this);
-        transferPanel.add(transferResetButton);
-
-        transferMoneyButton = new JButton("TRANSFER");
-        transferMoneyButton.setForeground(Color.white);
-        transferMoneyButton.setBackground(Color.GRAY);
-        transferMoneyButton.setBounds(180, 320, 120, 30);
-        transferMoneyButton.addActionListener(this);
-        transferPanel.add(transferMoneyButton);
-
 
         //Edit profile panel
 
@@ -336,6 +270,11 @@ public class UserDashboard extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == signoutButton){
+            try {
+                connect.close();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
             this.dispose();
             new Login().setVisible(true);
         } else if (e.getSource() == homeButton){
@@ -391,16 +330,53 @@ public class UserDashboard extends JFrame implements ActionListener {
 
         } else if (e.getSource() == transferButton){
             screenPanel.removeAll();
-            screenPanel.add(transferPanel);
+            try {
+                screenPanel.add(transferPanel());
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
             screenPanel.repaint();
             screenPanel.revalidate();
+
         } else if (e.getSource() == transferResetButton){
             transferAmountOfMoneyTF.setText("");
             bankAcountNumberTF.setText("");
             transferPassField.setText("");
         } else if (e.getSource() == transferMoneyButton){
 
-            System.out.println("Transfer button clicked!");
+            int transferAccNum = Integer.parseInt(bankAcountNumberTF.getText());
+            int transferAmount = Integer.parseInt(transferAmountOfMoneyTF.getText());
+            String transferPass = transferPassField.getText();
+
+            try {
+                ResultSet rs = statement.executeQuery("SELECT * FROM bank WHERE acc_number="+user.getAccountNumber());
+                ResultSet tRs = statement.executeQuery("SELECT *FROM bank WHERE acc_number="+transferAccNum);
+                while (rs.next()){
+                    String userPass = rs.getString("password");
+                    int currentBalance = rs.getInt("balance");
+                    if (transferPassField.getText().equals(user.getPassword())){
+                        if (currentBalance >= transferAmount) {
+                            while (tRs.next()) {
+                                int tCurrentBalance = tRs.getInt("balance");
+                                String sql = "UPDATE bank " +
+                                        "SET balance = " + (tCurrentBalance + transferAmount) + " WHERE acc_number = " + transferAccNum;
+                                statement.executeUpdate(sql);
+                            }
+                            String sql = "UPDATE bank " +
+                                    "SET balance = " + (currentBalance - transferAmount) + " WHERE acc_number = " + user.getAccountNumber();
+                            statement.executeUpdate(sql);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Your current balance is "+currentBalance);
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Password incorrect");
+                        transferPassField.setText("");
+                    }
+                }
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+
 
         } else if (e.getSource() == editButton){
             screenPanel.removeAll();
@@ -493,5 +469,79 @@ public class UserDashboard extends JFrame implements ActionListener {
         return homePanel;
     }
 
+    public JPanel transferPanel() throws SQLException{
+
+
+
+        Border textFieldBorder = BorderFactory.createLineBorder(Color.GRAY, 2);
+
+        transferPanel = new JPanel();
+        transferPanel.setLayout(null);
+        transferPanel.setBounds(0,0, 380, 500);
+
+        comLabel = new JLabel();
+        comLabel.setIcon(new ImageIcon(getClass().getResource("idea_gey.png")));
+        comLabel.setBounds(50, 10, 200, 200);
+        comLabel.setSize(new Dimension(100, 100));
+        transferPanel.add(comLabel);
+
+        comLabel = new JLabel("Transfer your money");
+        comLabel.setFont(new Font("monospace", NORMAL, 15));
+        comLabel.setForeground(Color.BLACK);
+        comLabel.setBounds(50, 100, 200, 40);
+        transferPanel.add(comLabel);
+
+        comLabel = new JLabel("ACCOUNT NO. :");
+        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
+        comLabel.setForeground(Color.GRAY);
+        comLabel.setBounds(50, 130, 250, 40);
+        transferPanel.add(comLabel);
+
+        bankAcountNumberTF = new JTextField();
+        bankAcountNumberTF.setBorder(textFieldBorder);
+        bankAcountNumberTF.setFont(new Font("monospace", NORMAL, 13));
+        bankAcountNumberTF.setBounds(50, 160, 250, 30);
+        transferPanel.add(bankAcountNumberTF);
+
+        comLabel = new JLabel("AMOUNT OF BALANCE :");
+        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
+        comLabel.setForeground(Color.GRAY);
+        comLabel.setBounds(50, 190, 250, 40);
+        transferPanel.add(comLabel);
+
+        transferAmountOfMoneyTF = new JTextField();
+        transferAmountOfMoneyTF.setBorder(textFieldBorder);
+        transferAmountOfMoneyTF.setFont(new Font("monospace", NORMAL, 13));
+        transferAmountOfMoneyTF.setBounds(50, 220, 250, 30);
+        transferPanel.add(transferAmountOfMoneyTF);
+
+        comLabel = new JLabel("PASSWORD :");
+        comLabel.setFont(new Font("monospace", Font.BOLD, 12));
+        comLabel.setForeground(Color.GRAY);
+        comLabel.setBounds(50, 250, 250, 40);
+        transferPanel.add(comLabel);
+
+        transferPassField = new JPasswordField();
+        transferPassField.setBorder(textFieldBorder);
+        transferPassField.setFont(new Font("monospace", NORMAL, 13));
+        transferPassField.setBounds(50, 280, 250, 30);
+        transferPanel.add(transferPassField);
+
+        transferResetButton = new JButton("RESET");
+        transferResetButton.setForeground(Color.white);
+        transferResetButton.setBackground(Color.GRAY);
+        transferResetButton.setBounds(50, 320, 100, 30);
+        transferResetButton.addActionListener(this);
+        transferPanel.add(transferResetButton);
+
+        transferMoneyButton = new JButton("TRANSFER");
+        transferMoneyButton.setForeground(Color.white);
+        transferMoneyButton.setBackground(Color.GRAY);
+        transferMoneyButton.setBounds(180, 320, 120, 30);
+        transferMoneyButton.addActionListener(this);
+        transferPanel.add(transferMoneyButton);
+
+        return transferPanel;
+    }
 }
 

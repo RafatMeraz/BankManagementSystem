@@ -212,6 +212,12 @@ public class Signup extends JFrame {
                 Login login = new Login();
                 login.setVisible(true);
                 dispose();
+                try {
+                    connect.close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+
             }
         });
 
